@@ -1,0 +1,51 @@
+﻿TELA DA MERCURY - painel do carro (placa CYD ESP32-2432S028, tela 2,8" 320x240)
+Atualizado em 24/10/2026. Equipe Mercury Formula Team, Elétrica e Eletrônica.
+
+O QUE TEM AQUI
+  painel\                 o programa (sketch Arduino). Abra painel\painel.ino no Arduino IDE.
+  binarios_prontos\       o mesmo programa já compilado (modo demo), para gravar sem compilar.
+  logo\                   imagem do logo e o script que gera painel\logo_mercury.h (tela de boot).
+  gravar_binarios.ps1     grava binarios_prontos\ na placa pelo USB.
+
+O QUE O PAINEL FAZ
+  Mostra RPM (arco e leds de troca), velocidade, marcha estimada, combustível e botão REC.
+  Grava os sensores no cartão microSD (CSV, ~20 amostras por segundo) quando você TOCA na caixa REC
+  (canto superior esquerdo). Liga com o REC desligado. Toca de novo para parar.
+  A gravação para sozinha se o motor ficar parado por 5 minutos. O botão BOOT da placa também liga e desliga.
+  Arquivos: cartão /LOG/LOG_0001.csv, LOG_0002.csv...
+  Colunas: t_ms, rpm, kmh, comb_pct, comb_mv, marcha, neutro  (comb_mv só tem valor no modo sensores reais).
+
+MODOS
+  MODO_DEMO 1 (padrão): o carro "anda sozinho", sem sensores. Serve para testar tela, toque e cartão.
+  MODO_DEMO 0: lê os sensores reais. Para usar, coloque  #define MODO_DEMO 0  no começo de painel.ino
+                (ou compile com -DMODO_DEMO=0). AINDA NÃO TESTADO COM OS SENSORES NO CARRO.
+
+SENSORES (modo MODO_DEMO 0) - ver painel\entradas.h e painel\rpm_cdi.h
+  IO27  RPM, saída do módulo optoacoplador PC817 que lê o CDI (3,3 V)
+  IO22  sensor Hall da roda dianteira (A3144)
+  IO35  boia de combustível, por divisor de tensão (entrada analógica)
+  IO16  neutro (opcional, desligado: USAR_NEUTRO 0)
+  A CALIBRAR: CIRCUNFERENCIA_M e IMAS_NA_RODA (entradas.h), COMB_MV_VAZIO e COMB_MV_CHEIO (use a coluna comb_mv
+  do log), PULSOS_POR_ROTACAO (rpm_cdi.h) e as relações de marcha (simulacao.h, hoje ilustrativas).
+
+PINOS DA PLACA USADOS (CYD)
+  Tela ST7789: SCLK14 MOSI13 MISO12 DC2 CS15, backlight IO21.  Cartão SD: SCK18 MISO19 MOSI23 CS5.
+  Toque XPT2046 (lido por software, para não brigar com o SD): CLK25 MOSI32 MISO39 CS33.
+
+COMO COMPILAR (Arduino IDE)
+  Placa: "ESP32 Dev Module" (plataforma esp32 da Espressif, versão 2.0.17). Biblioteca: LovyanGFX 1.2.34.
+  Abra painel\painel.ino e clique em Carregar (Upload).
+  Ou por linha de comando (arduino-cli):  arduino-cli compile --fqbn esp32:esp32:esp32 painel
+  Para modo sensores: acrescente  --build-property "build.extra_flags=-DMODO_DEMO=0"
+
+COMO GRAVAR NA PLACA
+  Esta placa só aceita gravar com o botão BOOT apertado: segure BOOT, deixe o gravador conectar, solte
+  quando começar a escrever. Depois solte e aperte reset (ou desligue e ligue o USB).
+  Sem compilar:  .\gravar_binarios.ps1 -Porta COM8   (troque COM8 pela porta da sua placa)
+
+TELA DE BOOT
+  Se trocar o logo: coloque a imagem em logo\logo_mercury_recorte.png e rode  python logo\gerar_logo_h.py
+  (precisa da biblioteca Pillow). Isso refaz painel\logo_mercury.h.
+
+AJUSTES QUE SÃO PALPITE (definir com a equipe do motor)
+  RPM_MAX_ESCALA, FAIXA_AMARELA e FAIXA_VERMELHA em painel.ino.
